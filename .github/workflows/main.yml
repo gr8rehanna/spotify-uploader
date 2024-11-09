@@ -1,0 +1,62 @@
+name: Podcast Upload
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date for the audio file (e.g., 09 Nov 2024)'
+        required: true
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js environment
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18' # or specify a different version if needed
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Download Audio File
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          FORMATTED_DATE=$(date -d "$DATE" +"%d %%20%b %%20%Y") # Formats date for URL
+          wget "https://archive.org/download/sairbeen-rks/Sairbeen $FORMATTED_DATE.mp3" -O "./audio/Sairbeen_${DATE}.mp3"
+
+      - name: Run Podcast Upload Script
+        env:
+          AUDIO_FILE: "./audio/Sairbeen_${{ github.event.inputs.date }}.mp3"
+          EPISODE_TITLE: "Sairbeen ${{ github.event.inputs.date }}"
+          EPISODE_DESCRIPTION: "Sairbeen News Bulletin on ${{ github.event.inputs.date }} Published by Radio Kashmir Srinagar - Uploaded by wansaw for more check https://github.com/wansawinc/sairbeen"
+        run: |
+          cat <<EOF > ./scripts/upload.js
+          const uploadToAnchor = require("./puppeteer-upload")
+
+          const testEpisodeData = {
+            title: process.env.EPISODE_TITLE,
+            description: process.env.EPISODE_DESCRIPTION,
+          }
+
+          const run_script = async () => {
+            try {
+              await uploadToAnchor({
+                episode: testEpisodeData,
+                audioFile: process.env.AUDIO_FILE,
+                debug: true,
+                publish: false,
+              })
+            } catch (error) {
+              console.log("🚨 error uploading to Anchor", error)
+              process.exit()
+            }
+          }
+
+          run_script()
+          EOF
+          npm test
