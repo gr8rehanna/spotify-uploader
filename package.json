@@ -4,7 +4,7 @@
   "description": "Automated Spotify Podcaster (Anchor) episode uploader",
   "main": "index.js",
   "scripts": {
-    "test": "node ./scripts/puppeteer-upload.example.js"
+    "test": "node ./scripts/upload.js"
   },
   "author": "Peter Pirc",
   "license": "MIT",
